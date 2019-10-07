@@ -13,6 +13,7 @@ source("UsefulFunctions.R")
 
 # define data and plot
 DATA <- getDataAllDF("./Data/")
+#dataAvg <- movingAverageDF(DATA,20)
 keepPlot <- ggplot()    # Keeps current saved plot
 
 generatePlot <- function(settings){
@@ -22,17 +23,23 @@ generatePlot <- function(settings){
     # [3]   tStart 
     # [4]   tStop
     # [5]   color
-    
+    # [6]   avgNum
+    # [7]   avgBool
+
     cat("Current Settings: ")
     cat(settings)
     cat("\n")
 
     plot <- keepPlot   # Build plot from last stored plot
     
-    # Set the time range for the data
+    # Set the time range for the data and whether the avg or raw data is used
+    
     temp <- DATA[DATA$Time>as.numeric(settings[3]) & DATA$Time<as.numeric(settings[4]),]
     
     if(settings[1] == "v"){ # Generate a voltage plot
+        if(settings[7]){
+            temp[,as.numeric(settings[2])+203] = movingAverage(temp[,as.numeric(settings[2])+203],as.numeric(settings[6]))
+        }
         plot <- plot+
             geom_path(aes(x=temp$Time,y=temp[,as.numeric(settings[2])+203]), color=settings[5], size=1)+
             ylab("Voltage (mV)")+ylim(-120,40)+
@@ -42,6 +49,9 @@ generatePlot <- function(settings){
                   axis.title=element_text(size=14,face="bold"))
     }
     if(settings[1] == "m"){ # Generate M Gate plot
+        if(settings[7]){
+            temp[,as.numeric(settings[2])+1] = movingAverage(temp[,as.numeric(settings[2])+1],as.numeric(settings[6]))
+        }
         plot <- plot+
             geom_path(aes(x=temp$Time,y=temp[,as.numeric(settings[2])+1]), color=settings[5], size=1)+
             ylab("M Gate")+ylim(0,1)+
@@ -51,6 +61,9 @@ generatePlot <- function(settings){
                   axis.title=element_text(size=14,face="bold"))
     }
     if(settings[1] == "h"){ # Generate a H Gate plot
+        if(settings[7]){
+            temp[,as.numeric(settings[2])+102] = movingAverage(temp[,as.numeric(settings[2])+102],as.numeric(settings[6]))
+        }
         plot <- plot+
             geom_path(aes(x=temp$Time,y=temp[,as.numeric(settings[2])+102]), color=settings[5], size=1)+
             ylab("H Gate")+ylim(0,1)+
@@ -60,6 +73,10 @@ generatePlot <- function(settings){
                   axis.title=element_text(size=14,face="bold"))
     }
     if(settings[1] == "pp"){ # Generate a Phase Plane Plot
+        if(settings[7]){
+            temp[,as.numeric(settings[2])+1] = movingAverage(temp[,as.numeric(settings[2])+1],as.numeric(settings[6]))
+            temp[,as.numeric(settings[2])+102] = movingAverage(temp[,as.numeric(settings[2])+102],as.numeric(settings[6]))
+        }
         plot <- plot+
             geom_path(aes(x=temp[,as.numeric(settings[2])+1], y=temp[,as.numeric(settings[2])+102]), color=settings[5], size=1)+
             ylab("H Gate")+ylim(0,1)+
@@ -91,6 +108,8 @@ ui <- fluidPage(
                           "Phase Plane"="pp")),
 
             numericInput("nodeNum", "Node Number:", 51, min=1, max=101, step=1, width="50%"),
+            numericInput("avgNum", "Moving Average Width:", 20, min=1, max=100, step=1, width="50%"),
+            checkboxInput("avgBool", "Turn on Moving Average:", FALSE),
             selectInput("color", "Color:",c("BLACK"="#111111","RED"="#FF2222","BLUE"="#2222FF","GREEN"="#22FF22")),
             br(),
             # Graph updating buttons
@@ -107,7 +126,7 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("mainPlot", height = "800px"),
+           plotOutput("mainPlot")
         )
     )
 )
@@ -118,7 +137,7 @@ server <- function(input, output, session) {
     output$mainPlot <- renderPlot({
         input$generate
         cat("GENERATING NEW PLOT\n")
-        settings <- isolate(c(input$variable,input$nodeNum,input$tStart,input$tStop, input$color))
+        settings <- isolate(c(input$variable,input$nodeNum,input$tStart,input$tStop, input$color, input$avgNum, input$avgBool))
         mainPlot <- isolate(generatePlot(settings))
         mainPlot
     })
@@ -126,8 +145,8 @@ server <- function(input, output, session) {
     # Save the plot to the plots folder when button is clicked
     observeEvent(input$save,{
         cat("SAVING\n")
-        plot <- generatePlot(c(input$variable, input$nodeNum, input$tStart, input$tStop,input$color))
-        plotName <- generateName(c(input$variable, input$nodeNum, input$tStart, input$tStop, input$color))
+        plot <- generatePlot(c(input$variable, input$nodeNum, input$tStart, input$tStop,input$color, input$avgNum, input$avgBool))
+        plotName <- generateName(c(input$variable, input$nodeNum, input$tStart, input$tStop, input$color, input$avgNum, input$avgBool))
         ggsave(filename = sprintf("./Plots/%s",plotName), plot, width = 5, height = 3, dpi=150)
     })
     
@@ -135,7 +154,7 @@ server <- function(input, output, session) {
     observeEvent(input$keep,{
         cat("KEEPING\n")
         # note that to overwrite session variables the '<<-' syntax is used
-        keepPlot <<- generatePlot(c(input$variable, input$nodeNum, input$tStart, input$tStop, input$color))
+        keepPlot <<- generatePlot(c(input$variable, input$nodeNum, input$tStart, input$tStop, input$color, input$avgNum, input$avgBool))
     })
     
     # Clear the current layered plot
