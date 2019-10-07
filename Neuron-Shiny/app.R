@@ -95,38 +95,54 @@ generateName <- function(settings){
 }
 
 ui <- fluidPage(
-    # Application title
-    titlePanel("NEURON Data Analysis"),
-
-    # Sidebar with a slider input and save button
-    sidebarLayout(
-        sidebarPanel(
+    fluidRow(
+        # Sidebar panel
+        column(2,
+            titlePanel("NEURON DATA"),
             selectInput("variable", "Variable:",
                         c("Voltage" = "v",
                           "M Gate" = "m",
                           "H Gate" = "h",
                           "Phase Plane"="pp")),
-
-            numericInput("nodeNum", "Node Number:", 51, min=1, max=101, step=1, width="50%"),
-            numericInput("avgNum", "Moving Average Width:", 20, min=1, max=100, step=1, width="50%"),
+            fluidRow(
+                column(6,
+                    numericInput("nodeNum", "Node Number:", 51, min=1, max=101, step=1)
+                ),
+                column(6,
+                    numericInput("avgNum", "Moving AVG Width:", 20, min=1, max=100, step=1)
+                )
+            ),
             checkboxInput("avgBool", "Turn on Moving Average:", FALSE),
             selectInput("color", "Color:",c("BLACK"="#111111","RED"="#FF2222","BLUE"="#2222FF","GREEN"="#22FF22")),
             br(),
-            # Graph updating buttons
-            actionButton("generate", "Generate"),
-            actionButton("keep", "Keep Plot"),
-            actionButton("clear", "Clear Plot"),
-            br(),
+           
             # Time start and stop selection, divs were used for styling to force the two on the same line
-            div(style="display: inline-block;vertical-align:center; width: 45%; margin-top: 10px;",numericInput("tStart", "Start Time:", 0, min=0, max=100, step=.01)),
-            div(style="display: inline-block;vertical-align:center; width: 45%; margin-top: 10px;",numericInput("tStop", "Stop Time:", 100, min=0, max=100, step=.01)),
+            div(style="display: inline-block;vertical-align:center; width: 45%;",numericInput("tStart", "Start Time:", 0, min=0, max=100, step=.01)),
+            div(style="display: inline-block;vertical-align:center; width: 45%;",numericInput("tStop", "Stop Time:", 100, min=0, max=100, step=.01)),
             br(),
-            actionButton("save", "Save Plot")
+            
+            fluidRow(
+                column(6,
+                    actionButton("generate", "Generate")
+                ),
+                column(6,
+                    actionButton("keep", "Keep Plot")
+                )
+            ),
+            br(),
+            fluidRow(
+                column(6,
+                    actionButton("clear", "Clear Plot")
+                ),
+                column(6,
+                    actionButton("save", "Save Plot")
+                )
+            )
         ),
 
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("mainPlot")
+        # Main panel
+        column(10,
+            plotOutput("mainPlot", height=700)
         )
     )
 )
