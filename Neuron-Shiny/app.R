@@ -179,10 +179,10 @@ ui <- navbarPage("Neuron Data",
                 checkboxInput("avgBool3d", "Turn on Moving AVG:", FALSE),
                 fluidRow(
                     column(6,
-                        numericInput("theta","Theta",0,min=0,max=180,step=5)
+                        numericInput("theta","Theta",0,min=-180,max=180,step=5)
                     ),
                     column(6,
-                        numericInput("phi","Phi",0,min=0,max=180,step=5)
+                        numericInput("phi","Phi",0,min=-180,max=180,step=5)
                     )
                 )
             ),
