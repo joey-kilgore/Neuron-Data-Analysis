@@ -12,9 +12,31 @@ library(ggplot2)
 source("UsefulFunctions.R")
 
 # define data and plot
-DATA <- getDataAllDF("./Data/")
+DATA <- getDataAllDF("/mnt/c/Users/Joey/Desktop/InternalElectrode/Only Center Stim (NO ONSET)/")
 #dataAvg <- movingAverageDF(DATA,20)
 keepPlot <- ggplot()    # Keeps current saved plot
+
+generateVector <- function(vectorVar, nodeNum, tStart, tStop, avgBool, avgNum){
+    # generate the vector from DATA given the input parameters
+    colNum = 0
+    if(vectorVar=="v"){
+        colNum = as.numeric(nodeNum)+203
+    }else if(vectorVar=="m"){
+        colNum = as.numeric(nodeNum)+1
+    }else if(vectorVar=="h"){
+        colNum = as.numeric(nodeNum)+102
+    }else if(vectorVar=="t"){
+        colNum = 1
+    }
+
+    vec <- DATA[DATA$Time>as.numeric(tStart) & DATA$Time<as.numeric(tStop), colNum]
+
+    if(avgBool){
+        vec <- movingAverage(vec, as.numeric(avgNum))
+    }
+
+    vec
+} 
 
 generatePlot <- function(settings){
     # settings is a vector containing the following strings
@@ -31,59 +53,25 @@ generatePlot <- function(settings){
     cat("\n")
 
     plot <- keepPlot   # Build plot from last stored plot
-    
-    # Set the time range for the data and whether the avg or raw data is used
-    
-    temp <- DATA[DATA$Time>as.numeric(settings[3]) & DATA$Time<as.numeric(settings[4]),]
-    
-    if(settings[1] == "v"){ # Generate a voltage plot
-        if(settings[7]){
-            temp[,as.numeric(settings[2])+203] = movingAverage(temp[,as.numeric(settings[2])+203],as.numeric(settings[6]))
-        }
-        plot <- plot+
-            geom_path(aes(x=temp$Time,y=temp[,as.numeric(settings[2])+203]), color=settings[5], size=1)+
-            ylab("Voltage (mV)")+ylim(-120,40)+
-            xlab("Time (ms)")+
-            ggtitle(sprintf("Node %s Voltage",settings[2]))+
-            theme(plot.title = element_text(hjust = 0.5, size=18,face="bold"),axis.text=element_text(size=12),
-                  axis.title=element_text(size=14,face="bold"))
+
+    # Generate x axis data
+    if(settings[1] == "pp") {
+        vectorVar <- "m"
+    }else{
+        vectorVar <- "t"
     }
-    if(settings[1] == "m"){ # Generate M Gate plot
-        if(settings[7]){
-            temp[,as.numeric(settings[2])+1] = movingAverage(temp[,as.numeric(settings[2])+1],as.numeric(settings[6]))
-        }
-        plot <- plot+
-            geom_path(aes(x=temp$Time,y=temp[,as.numeric(settings[2])+1]), color=settings[5], size=1)+
-            ylab("M Gate")+ylim(0,1)+
-            xlab("Time (ms)")+
-            ggtitle(sprintf("Node %s M Gate",settings[2]))+
-            theme(plot.title = element_text(hjust = 0.5, size=18,face="bold"),axis.text=element_text(size=12),
-                  axis.title=element_text(size=14,face="bold"))
+    xData <- generateVector(vectorVar, settings[2], settings[3], settings[4], settings[7], settings[6])
+
+    # Generate y axis data
+    if(settings[1] == "pp") {
+        vectorVar <- "h"
+    }else{
+        vectorVar <- settings[1]
     }
-    if(settings[1] == "h"){ # Generate a H Gate plot
-        if(settings[7]){
-            temp[,as.numeric(settings[2])+102] = movingAverage(temp[,as.numeric(settings[2])+102],as.numeric(settings[6]))
-        }
-        plot <- plot+
-            geom_path(aes(x=temp$Time,y=temp[,as.numeric(settings[2])+102]), color=settings[5], size=1)+
-            ylab("H Gate")+ylim(0,1)+
-            xlab("Time (ms)")+
-            ggtitle(sprintf("Node %s H Gate",settings[2]))+
-            theme(plot.title = element_text(hjust = 0.5, size=18,face="bold"),axis.text=element_text(size=12),
-                  axis.title=element_text(size=14,face="bold"))
-    }
-    if(settings[1] == "pp"){ # Generate a Phase Plane Plot
-        if(settings[7]){
-            temp[,as.numeric(settings[2])+1] = movingAverage(temp[,as.numeric(settings[2])+1],as.numeric(settings[6]))
-            temp[,as.numeric(settings[2])+102] = movingAverage(temp[,as.numeric(settings[2])+102],as.numeric(settings[6]))
-        }
-        plot <- plot+
-            geom_path(aes(x=temp[,as.numeric(settings[2])+1], y=temp[,as.numeric(settings[2])+102]), color=settings[5], size=1)+
-            ylab("H Gate")+ylim(0,1)+
-            xlab("M Gate")+xlim(0,1)+ggtitle(sprintf("Node %s H Gate",settings[2]))+
-            theme(plot.title = element_text(hjust = 0.5, size=18,face="bold"),axis.text=element_text(size=12),
-                  axis.title=element_text(size=14,face="bold"))
-    }
+    yData <- generateVector(vectorVar, settings[2], settings[3], settings[4], settings[7], settings[6])
+
+    plot <- plot+geom_path(aes(x=xData,y=yData), color=settings[5], size=1)
+        
     plot
 }
 
