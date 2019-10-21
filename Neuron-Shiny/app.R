@@ -10,15 +10,15 @@
 library(shiny)
 library(ggplot2)
 library("plot3D")
+library(scales)
 source("UsefulFunctions.R")
 
 # define data and plot
 DATA <- getDataAllDF("/mnt/c/Users/Joey/Desktop/InternalElectrode/No DC/")
 keepPlot <- ggplot()    # Keeps current saved plot
 
-# MAIN PAGE FUNCTIONS (2D Plot)
-generateVector <- function(vectorVar, nodeNum, tStart, tStop, avgBool, avgNum){
-    # generate the vector from DATA given the input parameters
+varToColNum <- function(vectorVar, nodeNum){
+    # turn any variable string and node to the column number for DATA
     colNum = 0
     if(vectorVar=="v"){
         colNum = as.numeric(nodeNum)+203
@@ -29,9 +29,21 @@ generateVector <- function(vectorVar, nodeNum, tStart, tStop, avgBool, avgNum){
     }else if(vectorVar=="t"){
         colNum = 1
     }
+    colNum
+}
+
+# MAIN PAGE FUNCTIONS (2D Plot)
+generateVector <- function(vectorVar, nodeNum, tStart, tStop, avgBool, avgNum, respectTo){
+    # generate the vector from DATA given the input parameters
+    colNum <- varToColNum(vectorVar, nodeNum)
+    if(!missing(respectTo)) colRespect <- varToColNum(respectTo, nodeNum)
 
     vec <- DATA[DATA$Time>as.numeric(tStart) & DATA$Time<as.numeric(tStop), colNum]
-
+    if(!missing(respectTo)){
+        vecRespect <- DATA[DATA$Time>as.numeric(tStart) & DATA$Time<as.numeric(tStop), colRespect]
+        vec <- calcDiff(vecRespect, vec)
+    }
+    
     if(avgBool){
         vec <- movingAverage(vec, as.numeric(avgNum))
     }
@@ -49,6 +61,8 @@ generatePlot <- function(settings){
     # [6]   color
     # [7]   avgNum
     # [8]   avgBool
+    # [9]   deriv, same as xvar, "N/A"=nothing (ie show raw y var)
+    # [10]  normalize T/F
 
     cat("Current Settings: ")
     cat(settings)
@@ -58,9 +72,19 @@ generatePlot <- function(settings){
 
     # Generate x axis data
     xData <- generateVector(settings[1], settings[3], settings[4], settings[5], settings[8], settings[7])
-
+    
     # Generate y axis data
-    yData <- generateVector(settings[2], settings[3], settings[4], settings[5], settings[8], settings[7])
+    if(settings[9] == "N/A"){
+        yData <- generateVector(settings[2], settings[3], settings[4], settings[5], settings[8], settings[7])
+    }else{
+        # There is a partial derivative being displayed
+        yData <- generateVector(settings[2], settings[3], settings[4], settings[5], settings[8], settings[7], settings[9])
+        # we will throw away the first index of both x and y data because of how the deriv is calculated
+        yData <- yData[-1]
+        xData <- xData[-1]
+    }
+    
+    if(settings[10]) yData <- rescale(yData)
 
     plot <- plot+geom_path(aes(x=xData,y=yData), color=settings[6], size=1)+
                 xlab(settings[1])+ylab(settings[2])+
@@ -95,7 +119,10 @@ generate3D <- function(nodeNum, tStart, tStop, avgBool, avgNum, theta, phi){
     y <- generateVector("h", nodeNum, tStart, tStop, avgBool, avgNum)
     z <- generateVector("v", nodeNum, tStart, tStop, avgBool, avgNum)
     
-    plot <- scatter3D(x,y,z, bty="g", theta=as.numeric(theta), phi=as.numeric(phi), type="l", ticktype="detailed", lwd=2)
+    plot <- scatter3D(x,y,z, 
+                      xlab="m",ylab="h",zlab="v",
+                      axis.scales=FALSE, xlim=c(0,1), ylim=c(0,1), zlim=c(-150,60),
+                      bty="g", theta=as.numeric(theta), phi=as.numeric(phi), type="l", ticktype="detailed", lwd=2)
     plot
 }
 
@@ -104,12 +131,23 @@ ui <- navbarPage("Neuron Data",
         fluidRow(
             # Sidebar panel
             column(2,
-                selectInput("yvar", "Y Variable:",
+                fluidRow(
+                    column(6,
+                        selectInput("yvar", "Y Variable:",
                             c("Voltage" = "v",
                               "M Gate" = "m",
                               "H Gate" = "h",
-                              "Time"="t")),
-                
+                              "Time"="t"))
+                    ),
+                    column(6,
+                        selectInput("deriv", "Respect To:",
+                            c("Nothing" = "N/A",
+                              "Voltage" = "v",
+                              "M Gate" = "m",
+                              "H Gate" = "h",
+                              "Time"="t"))
+                   )
+                ),
                 selectInput("xvar", "X Variable:",
                             c("Voltage" = "v",
                               "M Gate" = "m",
@@ -123,8 +161,9 @@ ui <- navbarPage("Neuron Data",
                         numericInput("avgNum", "Moving AVG Width:", 20, min=1, max=100, step=1)
                     )
                 ),
-                checkboxInput("avgBool", "Turn on Moving Average:", FALSE),
-                selectInput("color", "Color:",c("BLACK"="#111111","RED"="#FF2222","BLUE"="#2222FF","GREEN"="#22FF22")),
+                checkboxInput("avgBool", "Turn on Moving Average", FALSE),
+                checkboxInput("normal", "Normalize Y Axis", FALSE),
+                textInput("color", "Color:", value = "#111111"),
                 br(),
                
                 # Time start and stop selection, divs were used for styling to force the two on the same line
@@ -197,7 +236,7 @@ ui <- navbarPage("Neuron Data",
 server <- function(input, output, session) {
     # MAIN PAGE (2D Plot)
     generateSettings <- function(){
-        c(input$xvar,input$yvar,input$nodeNum,input$tStart,input$tStop,input$color,input$avgNum,input$avgBool)
+        c(input$xvar,input$yvar,input$nodeNum,input$tStart,input$tStop,input$color,input$avgNum,input$avgBool,input$deriv,input$normal)
     }
     
     # Render new main plot when the generate button is clicked

@@ -1,3 +1,19 @@
+calcDiff <- function(x,y){
+    # calcDiff takes in two vectors (x,y) and returns
+    #   a vector containing all values in order of partial
+    #   derivative of y with respect to x
+    # 0 is placed in the first index because the partial
+    #   deriv cannot be calculated
+    output <- x     # set output with the same dimension as x
+    output[1] <- 0
+    i <- 2
+    while(i<length(x)){
+        output[i] <- (y[i]-y[i-1])/(x[i]-x[i-1])
+        i <- i + 1
+    }
+    output
+}
+
 # x: the vector
 # n: the number of samples
 # centered: if FALSE, then average current sample and previous (n-1) samples
@@ -46,17 +62,28 @@ movingAverage <- function(x, n = 1, centered = FALSE) {
   s / count
 }
 
-movingAverageDF <- function(df, n) {
-  newDF <- df
-  for (name in colnames(df)) {
-    if (!identical(name, "Time")) {
-      # loop through every column of the data (which is every node)
-      newDF[[name]] <- movingAverage(df[[name]], n, FALSE) # find the moving average
-      #names(newDF)[name] <- paste(name) # label the new column ("Node<num>")
-    }
-  }
-  newDF
-}
+# movingAverageDF <- function(df, n) {
+#   newDF <- df
+#   # for (name in colnames(df)) {
+#   #   if (!identical(name, "Time")) {
+#   #     # loop through every column of the data (which is every node)
+#   #     # newDF[name,] <- movingAverage(df[name,], n, FALSE) # find the moving average
+#   #     # names(newDF)[name] <- paste(name) # label the new column ("Node<num>")
+#   #   
+#   #   }
+#   # }
+#   
+#   # for(col in ncol(newDF)){
+#   #   for(row in seq(n+1, nrow(newDF), by=1)){
+#   #     sum = 0
+#   #     for(i in seq(row-n, row, by=1)){
+#   #       sum = sum+df[i,col]
+#   #     }
+#   #     newDF[row,col] <- sum
+#   #   }
+#   # }
+#   newDF
+# }
 
 slopeDF <- function(df, collumns) {
   newDF <- df
