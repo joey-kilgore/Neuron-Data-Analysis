@@ -113,7 +113,7 @@ generateProfile <- function(tProfile){
 }
 
 # 3D PLOT FUNCTIONS
-generate3D <- function(nodeNum, tStart, tStop, avgBool, avgNum, theta, phi){
+generate3D <- function(nodeNum, tStart, tStop, avgBool, avgNum, theta, phi, mlims, hlims, vlims){
     # generate a 3d plot with x=m, y=h, z=v
     x <- generateVector("m", nodeNum, tStart, tStop, avgBool, avgNum)
     y <- generateVector("h", nodeNum, tStart, tStop, avgBool, avgNum)
@@ -121,7 +121,7 @@ generate3D <- function(nodeNum, tStart, tStop, avgBool, avgNum, theta, phi){
     
     plot <- scatter3D(x,y,z, 
                       xlab="m",ylab="h",zlab="v",
-                      axis.scales=FALSE, xlim=c(0,1), ylim=c(0,1), zlim=c(-150,60),
+                      axis.scales=FALSE, xlim=mlims, ylim=hlims, zlim=vlims,
                       bty="g", theta=as.numeric(theta), phi=as.numeric(phi), type="l", ticktype="detailed", lwd=2)
     plot
 }
@@ -212,8 +212,8 @@ ui <- navbarPage("Neuron Data",
             # Sidebar panel
             column(2,
                 numericInput("nodeNum3d", "Node Number:", 51, min=1, max=101, step=1),
-                numericInput("tStart3d", "Start Time:", .005, min=.005, max=100, step=.005),
-                numericInput("tStop3d", "Stop Time:", 100, min=.005, max=100, step=.005),
+                numericInput("tStart3d", "Start Time:", .005, min=.005, max=100, step=.1),
+                numericInput("tStop3d", "Stop Time:", 100, min=.005, max=100, step=.1),
                 numericInput("avgNum3d", "Moving AVG Width:", 20, min=1, max=100, step=1),
                 checkboxInput("avgBool3d", "Turn on Moving AVG:", FALSE),
                 fluidRow(
@@ -223,7 +223,10 @@ ui <- navbarPage("Neuron Data",
                     column(6,
                         numericInput("phi","Phi",0,min=-180,max=180,step=5)
                     )
-                )
+                ),
+                sliderInput("mlim", "M Axis", min=0, max=1, value=c(0,1)),
+                sliderInput("hlim", "H Axis", min=0, max=1, value=c(0,1)),
+                sliderInput("vlim", "V Axis", min=-200, max=100, value=c(-150,50))
             ),
             column(10,
                 plotOutput("plot3d", height=600)
@@ -279,7 +282,7 @@ server <- function(input, output, session) {
 
     # 3D PLOT
     output$plot3d <- renderPlot({
-        plot3d <- generate3D(input$nodeNum3d,input$tStart3d,input$tStop3d,input$avgBool3d,input$avgNum3d,input$theta,input$phi)
+        plot3d <- generate3D(input$nodeNum3d,input$tStart3d,input$tStop3d,input$avgBool3d,input$avgNum3d,input$theta,input$phi,input$mlim,input$hlim,input$vlim)
         plot3d
     })
 }
