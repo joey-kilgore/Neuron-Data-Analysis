@@ -14,7 +14,8 @@ library(scales)
 source("UsefulFunctions.R")
 
 # define data and plot
-DATA <- getDataAllDF("/mnt/c/Users/Joey/Desktop/InternalElectrode/No DC/")
+dataDir <- "/mnt/c/Users/Joey/Desktop/InternalElectrode/Only Flanking Stim (EXTRA ONSET)/"
+DATA <- getDataAllDF(dataDir)
 keepPlot <- ggplot()    # Keeps current saved plot
 
 varToColNum <- function(vectorVar, nodeNum){
@@ -232,8 +233,21 @@ ui <- navbarPage("Neuron Data",
                 plotOutput("plot3d", height=600)
             )
         )
+    ),
+    tabPanel("Data Set",
+        fluidRow(
+            column(10,
+                textInput("dataFolder", "Data Folder:", value="/mnt/c/Users/Joey/Desktop/InternalElectrode/Only Flanking Stim (EXTRA ONSET)/", width="100%")
+            ),
+            column(2,
+                actionButton("updateData", "Update Dataset")
+            )
+        ),
+        fluidRow(
+            verbatimTextOutput("setup")
+        )
     )
-)   
+) 
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
@@ -285,6 +299,27 @@ server <- function(input, output, session) {
         plot3d <- generate3D(input$nodeNum3d,input$tStart3d,input$tStop3d,input$avgBool3d,input$avgNum3d,input$theta,input$phi,input$mlim,input$hlim,input$vlim)
         plot3d
     })
+
+    # Data selection
+    observeEvent(input$updateData,{
+        # There are two possible errors that can occur, the data folder doesn't exist, or just the Setup.txt doesn't
+        tryCatch({
+            txt <- readLines(paste(input$dataFolder, "Setup.txt", sep=""), warn=FALSE)
+            txt <- paste(txt, collapse="\n")
+            output$setup <- renderPrint({cat(txt)})
+        },
+        error=function(cond){
+            output$setup <- renderPrint({cat(paste("NO Setup.txt file\n",cond, sep=""))})
+        })
+        
+        tryCatch({
+            DATA <<- getDataAllDF(input$dataFolder)
+        },
+        error=function(cond){
+            output$setup <- renderPrint({cat(paste("COULD NOT FIND DATA FOLDER\n",cond, sep=""))})
+        })
+    })
+    
 }
 
 # Run the application 
