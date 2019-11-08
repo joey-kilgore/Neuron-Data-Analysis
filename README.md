@@ -1,5 +1,6 @@
 # Neuron-Data-Analysis
 R Shiny app for analyzing data from NEURON simulations with complex models.  
+For help with setup see the [WIKI](https://github.com/joey-kilgore/Neuron-Data-Analysis/wiki)
 
 ### Running the application  
 Make sure you change the initial data folders in app.R to folders on your machine prior to running the application. Then enter the following:  
