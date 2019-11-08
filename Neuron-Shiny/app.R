@@ -106,7 +106,8 @@ generateProfile <- function(tProfile){
     # Generate the profile plot (V vs node) at a given time
     x <- seq(1,101,by=1)
     vData <- as.vector(unlist(DATA[as.numeric(tProfile)*200+1,x+203]))
-    plot <- ggplot() + geom_path(aes(x=x,y=vData), color="#EE2222", size=1)+
+    plot <- ggplot() + geom_path(aes(x=x,y=vData), color="#EE2222", size=.5)+
+                geom_point(aes(x=x,y=vData), color="#EE2222",size=2)+
                 xlab("Node")+ylab("Voltage")+
                 xlim(1,101) +ylim(-120,60)+
                 ggtitle(sprintf("Voltage Profile @t=%f",DATA[as.numeric(tProfile)*200,1]))
