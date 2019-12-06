@@ -80,9 +80,12 @@ generatePlot <- function(settings){
     }else{
         # There is a partial derivative being displayed
         yData <- generateVector(settings[2], settings[3], settings[4], settings[5], settings[8], settings[7], settings[9])
-        # we will throw away the first index of both x and y data because of how the deriv is calculated
+        # we will throw away the first and last index of both x and y data because of 
+        #   how the deriv is calculated
         yData <- yData[-1]
         xData <- xData[-1]
+        yData <- yData[-length(yData)]
+        xData <- xData[-length(xData)]
     }
     
     if(settings[10]) yData <- rescale(yData)
