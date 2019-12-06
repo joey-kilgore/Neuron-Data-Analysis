@@ -12,12 +12,13 @@ library(ggplot2)
 library("plot3D")
 library(scales)
 source("UsefulFunctions.R")
+source("loadDataDynamic.R")
 
 # define data and plot
 dataDir <- "/mnt/c/Users/Joey/Desktop/InternalElectrode/Only Flanking Stim (EXTRA ONSET)/"
 DATA <- getDataAllDF(dataDir)
 keepPlot <- ggplot()    # Keeps current saved plot
-
+initData(dataDir)
 varToColNum <- function(vectorVar, nodeNum){
     # turn any variable string and node to the column number for DATA
     colNum = 0
@@ -105,15 +106,14 @@ generateName <- function(settings){
 }
 
 # PROFILE PLOT FUNCTIONS
-generateProfile <- function(tProfile){
+generateProfile <- function(tProfile, variable, yMin, yMax){
     # Generate the profile plot (V vs node) at a given time
-    x <- seq(1,101,by=1)
-    vData <- as.vector(unlist(DATA[as.numeric(tProfile)*200+1,x+203]))
+    vData <- getVarRow(variable, tProfile*200+1)
+    x <- 1:length(vData)
     plot <- ggplot() + geom_path(aes(x=x,y=vData), color="#EE2222", size=.5)+
                 geom_point(aes(x=x,y=vData), color="#EE2222",size=2)+
-                xlab("Node")+ylab("Voltage")+
-                xlim(1,101) +ylim(-120,60)+
-                ggtitle(sprintf("Voltage Profile @t=%f",DATA[as.numeric(tProfile)*200,1]))
+                xlab("Node")+ylab(variable)+ylim(yMin,yMax)+
+                ggtitle(sprintf("%s @t=%f",variable, DATA[as.numeric(tProfile)*200,1]))
     plot
 }
 
@@ -201,14 +201,21 @@ ui <- navbarPage("Neuron Data",
             )
         )
     ),
-    tabPanel("V Profile",
+    tabPanel("Profile",
         fluidRow(
             # Sidebar panel
             column(2,
-                 numericInput("tProfile", "Time", 0, min=.005, max=100, step=.005)
+                numericInput("tProfile", "Time", 0, min=.005, max=100, step=.005),
+                uiOutput("varProfile"),
+                column(6,
+                    numericInput("yLowerLim", "Y Min", 0)
+                ),
+                column(6,
+                    numericInput("yUpperLim", "Y Max", 1)
+                )
             ),
             column(10,
-                plotOutput("VProfilePlot", height=600)
+                plotOutput("profilePlot", height=600)
             )
         )
     ),
@@ -292,10 +299,14 @@ server <- function(input, output, session) {
         mainPlot <-ggplot()
     })
 
-    # VOLTAGE PROFILE
-    output$VProfilePlot <- renderPlot({
-        VProfilePlot <- generateProfile(input$tProfile)
-        VProfilePlot
+    # PROFILE
+    output$varProfile <- renderUI({
+        selectInput("variableProfile", "Variable", names)    
+    })
+
+    output$profilePlot <- renderPlot({
+        profilePlot <- generateProfile(input$tProfile, input$variableProfile, input$yLowerLim, input$yUpperLim)
+        profilePlot
     })
 
     # 3D PLOT
@@ -318,6 +329,7 @@ server <- function(input, output, session) {
         
         tryCatch({
             DATA <<- getDataAllDF(input$dataFolder)
+            initData(input$dataFolder)
         },
         error=function(cond){
             output$setup <- renderPrint({cat(paste("COULD NOT FIND DATA FOLDER\n",cond, sep=""))})
