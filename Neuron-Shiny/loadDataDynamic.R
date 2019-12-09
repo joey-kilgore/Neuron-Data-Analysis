@@ -51,3 +51,13 @@ getVarTimeStep <- function(varName, tStart, tStop){
         dfList[[varName]]$Time>tStart & dfList[[varName]]$Time<tStop,
         1])
 }
+
+getTimeStep <- function(tStart, tStop){
+    # return vector corresponding to the time steps taken between
+    #   tStart and tStop for the first known variable
+    #   Note: that if each variable has different time steps, getVarTimeStep
+    #   should be used instead of this
+    unlist(dfList[[names[1]]][
+        dfList[[names[1]]]$Time>tStart & dfList[[names[1]]]$Time<tStop,
+        1])
+}

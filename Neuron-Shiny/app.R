@@ -16,33 +16,26 @@ source("loadDataDynamic.R")
 
 # define data and plot
 dataDir <- "/mnt/c/Users/Joey/Desktop/InternalElectrode/Only Flanking Stim (EXTRA ONSET)/"
-DATA <- getDataAllDF(dataDir)
 keepPlot <- ggplot()    # Keeps current saved plot
 initData(dataDir)
-varToColNum <- function(vectorVar, nodeNum){
-    # turn any variable string and node to the column number for DATA
-    colNum = 0
-    if(vectorVar=="v"){
-        colNum = as.numeric(nodeNum)+203
-    }else if(vectorVar=="m"){
-        colNum = as.numeric(nodeNum)+1
-    }else if(vectorVar=="h"){
-        colNum = as.numeric(nodeNum)+102
-    }else if(vectorVar=="t"){
-        colNum = 1
-    }
-    colNum
-}
 
 # MAIN PAGE FUNCTIONS (2D Plot)
 generateVector <- function(vectorVar, nodeNum, tStart, tStop, avgBool, avgNum, respectTo){
     # generate the vector from DATA given the input parameters
-    colNum <- varToColNum(vectorVar, nodeNum)
     if(!missing(respectTo)) colRespect <- varToColNum(respectTo, nodeNum)
 
-    vec <- DATA[DATA$Time>as.numeric(tStart) & DATA$Time<as.numeric(tStop), colNum]
+    if(vectorVar == "Time"){
+        vec <- getTimeStep(tStart, tStop)
+    }else{
+        vec <- getVarTimeBound(vectorVar, as.numeric(nodeNum), tStart, tStop)
+    }
+    
     if(!missing(respectTo)){
-        vecRespect <- DATA[DATA$Time>as.numeric(tStart) & DATA$Time<as.numeric(tStop), colRespect]
+        if(respectTo == "Time"){
+            vecRespect = getTimeStep(tStart,tStop)
+        }else{
+            vecRespect = getVarTimeBound(vectorVar, as.numeric(nodeNum), tStart, tStop)
+        }
         vec <- calcDiff(vecRespect, vec)
     }
     
@@ -113,16 +106,16 @@ generateProfile <- function(tProfile, variable, yMin, yMax){
     plot <- ggplot() + geom_path(aes(x=x,y=vData), color="#EE2222", size=.5)+
                 geom_point(aes(x=x,y=vData), color="#EE2222",size=2)+
                 xlab("Node")+ylab(variable)+ylim(yMin,yMax)+
-                ggtitle(sprintf("%s @t=%f",variable, DATA[as.numeric(tProfile)*200,1]))
+                ggtitle(sprintf("%s @t=%f",variable, tProfile*200))
     plot
 }
 
 # 3D PLOT FUNCTIONS
 generate3D <- function(nodeNum, tStart, tStop, avgBool, avgNum, theta, phi, mlims, hlims, vlims){
     # generate a 3d plot with x=m, y=h, z=v
-    x <- generateVector("m", nodeNum, tStart, tStop, avgBool, avgNum)
-    y <- generateVector("h", nodeNum, tStart, tStop, avgBool, avgNum)
-    z <- generateVector("v", nodeNum, tStart, tStop, avgBool, avgNum)
+    x <- generateVector("MGate", nodeNum, tStart, tStop, avgBool, avgNum)
+    y <- generateVector("HGate", nodeNum, tStart, tStop, avgBool, avgNum)
+    z <- generateVector("Voltage", nodeNum, tStart, tStop, avgBool, avgNum)
     
     plot <- scatter3D(x,y,z, 
                       xlab="m",ylab="h",zlab="v",
@@ -136,28 +129,7 @@ ui <- navbarPage("Neuron Data",
         fluidRow(
             # Sidebar panel
             column(2,
-                fluidRow(
-                    column(6,
-                        selectInput("yvar", "Y Variable:",
-                            c("Voltage" = "v",
-                              "M Gate" = "m",
-                              "H Gate" = "h",
-                              "Time"="t"))
-                    ),
-                    column(6,
-                        selectInput("deriv", "Respect To:",
-                            c("Nothing" = "N/A",
-                              "Voltage" = "v",
-                              "M Gate" = "m",
-                              "H Gate" = "h",
-                              "Time"="t"))
-                   )
-                ),
-                selectInput("xvar", "X Variable:",
-                            c("Voltage" = "v",
-                              "M Gate" = "m",
-                              "H Gate" = "h",
-                              "Time" = "t")),
+                uiOutput("plotVars"),
                 fluidRow(
                     column(6,
                         numericInput("nodeNum", "Node Number:", 51, min=1, max=101, step=1)
@@ -267,6 +239,27 @@ server <- function(input, output, session) {
         c(input$xvar,input$yvar,input$nodeNum,input$tStart,input$tStop,input$color,input$avgNum,input$avgBool,input$deriv,input$normal)
     }
     
+    output$plotVars <- renderUI({
+        fluidRow(
+            fluidRow(
+                column(6, style='padding-left:5px;',
+                    selectInput("yvar", "Y Variable:",
+                        c("Time", names))
+                ),
+                column(6,
+                    selectInput("deriv", "Respect To:",
+                        c("N/A", "Time", names))
+                )
+            ),
+            fluidRow(
+                column(12, style='padding-left:5px;',
+                    selectInput("xvar", "X Variable:",
+                        c("Time", names))
+                )
+            )
+        )
+    })
+
     # Render new main plot when the generate button is clicked
     output$mainPlot <- renderPlot({
         input$generate
@@ -328,7 +321,6 @@ server <- function(input, output, session) {
         })
         
         tryCatch({
-            DATA <<- getDataAllDF(input$dataFolder)
             initData(input$dataFolder)
         },
         error=function(cond){
