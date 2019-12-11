@@ -244,7 +244,7 @@ server <- function(input, output, session) {
     output$plotVars <- renderUI({
         fluidRow(
             fluidRow(
-                column(6, style='padding-left:5px;',
+                column(6, style='padding-left:25px;',
                     selectInput("yvar", "Y Variable:",
                         c("Time", names))
                 ),
@@ -254,7 +254,7 @@ server <- function(input, output, session) {
                 )
             ),
             fluidRow(
-                column(12, style='padding-left:5px;',
+                column(12, style='padding-left:25px;',
                     selectInput("xvar", "X Variable:",
                         c("Time", names))
                 )
