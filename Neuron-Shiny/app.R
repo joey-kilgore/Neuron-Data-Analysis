@@ -20,27 +20,29 @@ keepPlot <- ggplot()    # Keeps current saved plot
 initData(dataDir)
 
 # MAIN PAGE FUNCTIONS (2D Plot)
-generateVector <- function(vectorVar, nodeNum, tStart, tStop, avgBool, avgNum, respectTo){
+generateVector <- function(vectorVar, nodeNumString, tStartString, tStopString, avgBool, avgNumString, respectTo){
     # generate the vector from DATA given the input parameters
-    if(!missing(respectTo)) colRespect <- varToColNum(respectTo, nodeNum)
-
+    nodeNum = as.numeric(nodeNumString)
+    tStart = as.numeric(tStartString)
+    tStop = as.numeric(tStopString)
+    avgNum = as.numeric(avgNumString)
     if(vectorVar == "Time"){
         vec <- getTimeStep(tStart, tStop)
     }else{
-        vec <- getVarTimeBound(vectorVar, as.numeric(nodeNum), tStart, tStop)
+        vec <- getVarTimeBound(vectorVar, nodeNum, tStart, tStop)
     }
     
     if(!missing(respectTo)){
         if(respectTo == "Time"){
             vecRespect = getTimeStep(tStart,tStop)
         }else{
-            vecRespect = getVarTimeBound(vectorVar, as.numeric(nodeNum), tStart, tStop)
+            vecRespect = getVarTimeBound(vectorVar, nodeNum, tStart, tStop)
         }
         vec <- calcDiff(vecRespect, vec)
     }
     
     if(avgBool){
-        vec <- movingAverage(vec, as.numeric(avgNum))
+        vec <- movingAverage(vec, avgNum)
     }
 
     vec
