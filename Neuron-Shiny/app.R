@@ -43,8 +43,9 @@ generateVector <- function(vectorVar, nodeNumString, tStartString, tStopString, 
     
     if(avgBool){
         vec <- movingAverage(vec, avgNum)
+        vec <- vec[-(1:avgNum)]
     }
-
+    
     vec
 } 
 
@@ -113,11 +114,27 @@ generateProfile <- function(tProfile, variable, yMin, yMax){
 }
 
 # 3D PLOT FUNCTIONS
-generate3D <- function(nodeNum, tStart, tStop, avgBool, avgNum, theta, phi, mlims, hlims, vlims){
+generate3D <- function(settings){
+    cat("SETTINGS")
+    cat(settings)
+    cat()
+    nodeNum = as.numeric(settings[1])
+    tStart = as.numeric(settings[2])
+    tStop = as.numeric(settings[3])
+    avgBool = as.logical(settings[4])
+    avgNum = as.numeric(settings[5])
+    theta = as.numeric(settings[6])
+    phi = as.numeric(settings[7])
+    mlims = c(as.numeric(settings[8]),as.numeric(settings[9]))
+    hlims = c(as.numeric(settings[10]),as.numeric(settings[11]))
+    vlims = c(as.numeric(settings[12]),as.numeric(settings[13]))
+    xvar = settings[14]
+    yvar = settings[15]
+    zvar = settings[16]
     # generate a 3d plot with x=m, y=h, z=v
-    x <- generateVector("MGate", nodeNum, tStart, tStop, avgBool, avgNum)
-    y <- generateVector("HGate", nodeNum, tStart, tStop, avgBool, avgNum)
-    z <- generateVector("Voltage", nodeNum, tStart, tStop, avgBool, avgNum)
+    x <- generateVector(xvar, nodeNum, tStart, tStop, avgBool, avgNum)
+    y <- generateVector(yvar, nodeNum, tStart, tStop, avgBool, avgNum)
+    z <- generateVector(zvar, nodeNum, tStart, tStop, avgBool, avgNum)
     
     plot <- scatter3D(x,y,z, 
                       xlab="m",ylab="h",zlab="v",
@@ -197,6 +214,9 @@ ui <- navbarPage("Neuron Data",
         fluidRow(
             # Sidebar panel
             column(2,
+                fluidRow(
+                   uiOutput("plotVars3D")
+                ),
                 numericInput("nodeNum3d", "Node Number:", 51, min=1, max=101, step=1),
                 numericInput("tStart3d", "Start Time:", .005, min=.005, max=100, step=.1),
                 numericInput("tStop3d", "Stop Time:", 100, min=.005, max=100, step=.1),
@@ -210,9 +230,11 @@ ui <- navbarPage("Neuron Data",
                         numericInput("phi","Phi",0,min=-180,max=180,step=5)
                     )
                 ),
-                sliderInput("mlim", "M Axis", min=0, max=1, value=c(0,1)),
-                sliderInput("hlim", "H Axis", min=0, max=1, value=c(0,1)),
-                sliderInput("vlim", "V Axis", min=-200, max=100, value=c(-150,50))
+                fluidRow(
+                    sliderInput("mlim", "M Axis", min=0, max=1, value=c(0,1)),
+                    sliderInput("hlim", "H Axis", min=0, max=1, value=c(0,1)),
+                    sliderInput("vlim", "V Axis", min=-200, max=100, value=c(-150,50))
+                )
             ),
             column(10,
                 plotOutput("plot3d", height=600)
@@ -305,8 +327,31 @@ server <- function(input, output, session) {
     })
 
     # 3D PLOT
+    generateSettings3D <- function(){
+        c(input$nodeNum3d,input$tStart3d,input$tStop3d,input$avgBool3d,input$avgNum3d,input$theta,input$phi,input$mlim,input$hlim,input$vlim,input$xvar3d,input$yvar3d,input$zvar3d)
+    }
+
+    output$plotVars3D <- renderUI({
+        fluidRow(
+            fluidRow(
+                column(4, style='padding-left:25px;',
+                    selectInput("xvar3d", "X Variable:",
+                        c(names))
+                ),
+                column(4,
+                    selectInput("yvar3d", "Y Variable:",
+                        c(names))
+                ),
+                column(4,
+                    selectInput("zvar3d", "Z Variable:",
+                        c(names))
+                )
+            )
+        )
+    })
+
     output$plot3d <- renderPlot({
-        plot3d <- generate3D(input$nodeNum3d,input$tStart3d,input$tStop3d,input$avgBool3d,input$avgNum3d,input$theta,input$phi,input$mlim,input$hlim,input$vlim)
+        plot3d <- generate3D(generateSettings3D())
         plot3d
     })
 
