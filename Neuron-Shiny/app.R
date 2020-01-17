@@ -15,7 +15,7 @@ source("UsefulFunctions.R")
 source("loadDataDynamic.R")
 
 # define data and plot
-dataDir <- "/mnt/c/Users/Joey/Desktop/InternalElectrode/Only Flanking Stim (EXTRA ONSET)/"
+dataDir <- "/mnt/c/Users/Joey/Desktop/TestData/10kBlock/100BT/"
 keepPlot <- ggplot()    # Keeps current saved plot
 initData(dataDir)
 
@@ -245,6 +245,67 @@ ui <- navbarPage("Neuron Data",
             )
         )
     ),
+    tabPanel("Animate",
+        fluidRow(
+            column(3,
+                fluidRow(
+                    column(12,
+                        uiOutput("plotVarsAnimate")
+                    )
+                ),
+                numericInput("nodeNumAnimate", "Node Number:", 51, min=1, max=101, step=1),
+                numericInput("tStartAnimate", "Start Time:", .005, min=.005, max=100, step=.1),
+                numericInput("tStopAnimate", "Stop Time:", 100, min=.005, max=100, step=.1),
+                numericInput("avgNumAnimate", "Moving AVG Width:", 20, min=1, max=100, step=1),
+                checkboxInput("avgBoolAnimate", "Turn on Moving AVG:", FALSE),
+                fluidRow(
+                    column(6,
+                        numericInput("thetaAnimate","Theta",0,min=-180,max=180,step=5)
+                    ),
+                    column(6,
+                        numericInput("phiAnimate","Phi",0,min=-180,max=180,step=5)
+                    )
+                ),
+                fluidRow(
+                    column(12,
+                        sliderInput("xlimAnimate", "X Axis", min=-200, max=100, value=c(0,1)),
+                        sliderInput("ylimAnimate", "Y Axis", min=-200, max=100, value=c(0,1)),
+                        sliderInput("zlimAnimate", "Z Axis", min=-200, max=100, value=c(-150,50))
+                    )
+                ),
+                fluidRow(
+                    column(6,
+                        numericInput("timeAnimate", "Time Plotted", .5, min=.1, max=2, step = .1)
+                    ),
+                    column(6,
+                        numericInput("incrementsAnimate", "Increments", .1, min=.01, max=1, step=.01)
+                    )
+                ),
+                fluidRow(
+                    column(4,
+                        actionButton("startAnimate", "Start")
+                    ),
+                    column(4,
+                        actionButton("stopAnimate", "Stop")
+                    ),
+                    column(4,
+                        actionButton("resetAnimate", "Reset")
+                    )
+                )
+            ),
+            column(9,
+                plotOutput("animatedPlot", height=600),
+                fluidRow(
+                    column(6,
+                        verbatimTextOutput("startTimeAnimate")
+                    ),
+                    column(6,
+                        verbatimTextOutput("endTimeAnimate")
+                    )
+                )
+            )
+        )
+    ),
     tabPanel("Data Set",
         fluidRow(
             column(10,
@@ -357,6 +418,71 @@ server <- function(input, output, session) {
     output$plot3d <- renderPlot({
         plot3d <- generate3D(generateSettings3D())
         plot3d
+    })
+    
+
+    waits <- reactiveValues()   # reactive to store all reactive variables
+    waits$counter <- 0
+    waits$increment <- 1
+    waits$timer <- reactiveTimer(Inf)
+
+    observeEvent(waits$timer(),{
+        waits$counter <- waits$counter+waits$increment
+        if(waits$counter > input$tStopAnimate){
+            waits$counter <- input$tStartAnimate
+        }
+    })
+
+    # Animated plot
+    output$plotVarsAnimate <- renderUI({
+        fluidRow(
+            fluidRow(
+                column(4, style='padding-left:25px;',
+                    selectInput("xvarAnimate", "X Variable:",
+                        c(names))
+                ),
+                column(4,
+                    selectInput("yvarAnimate", "Y Variable:",
+                        c(names))
+                ),
+                column(4,
+                    selectInput("zvarAnimate", "Z Variable:",
+                        c(names))
+                )
+            )
+        )
+    })
+    
+    observeEvent(input$startAnimate,{
+        waits$counter <- input$tStartAnimate
+        waits$increment <- input$incrementsAnimate
+        waits$timer <- reactiveTimer(300)
+    })
+
+    observeEvent(input$stopAnimate,{
+        waits$timer <- reactiveTimer(Inf)
+    })
+
+    observeEvent(input$resetAnimate,{
+        waits$counter <- input$tStartAnimate
+    })
+    
+    generateSettingsAnimate <- function(){
+        tStart <- waits$counter
+        output$startTimeAnimate <- renderText(paste("Start Time: ", toString(tStart), sep="", collapse=NULL))
+
+        tStop <- waits$counter+input$timeAnimate
+        output$endTimeAnimate <- renderText(paste("End Time: ", toString(tStop), sep="", collapse=NULL))
+
+        c(input$nodeNumAnimate,tStart,tStop,input$avgBoolAnimate,input$avgNumAnimate,input$thetaAnimate,input$phiAnimate,input$xlimAnimate,input$ylimAnimate,input$zlimAnimate,input$xvarAnimate,input$yvarAnimate,input$zvarAnimate)
+    }
+
+    output$animatedPlot <- renderPlot({
+        req(input$xvarAnimate)  # this ensures that the UI has been rendered prior to trying to plot
+        waits$timer()
+        isolate(settingsAnimate <- generateSettingsAnimate())
+        isolate(plotAnimate <- generate3D(settingsAnimate))
+        plotAnimate
     })
 
     # Data selection
