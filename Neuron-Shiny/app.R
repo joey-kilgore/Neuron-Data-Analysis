@@ -377,9 +377,9 @@ server <- function(input, output, session) {
     waits <- reactiveValues()   # reactive to store all reactive variables
     waits$counter <- 0
     waits$increment <- 1
-    waits$timer <- reactiveTimer(Inf)
+    waits$timer <- reactiveTimer(Inf)   # the timer will be used to tell when the plot should update
 
-    observeEvent(waits$timer(),{
+    observeEvent(waits$timer(),{    # this increments the value of the counter when the timer triggers
         if(input$animateBool){
             waits$counter <- waits$counter+waits$increment
             if(waits$counter > input$tStop3d){
@@ -388,7 +388,7 @@ server <- function(input, output, session) {
         }
     })
     
-    observeEvent(input$startAnimate,{
+    observeEvent(input$startAnimate,{   
         if(input$animateBool == TRUE){
             waits$counter <- input$tStart3d
             waits$increment <- input$incrementsAnimate
@@ -396,8 +396,8 @@ server <- function(input, output, session) {
         }
     })
 
-    observeEvent(input$stopAnimate,{
-        waits$timer <- reactiveTimer(Inf)
+    observeEvent(input$stopAnimate,{    
+        waits$timer <- reactiveTimer(Inf)   # Inf is used to essentially turn the timer off
     })
 
     observeEvent(input$resetAnimate,{
@@ -406,8 +406,8 @@ server <- function(input, output, session) {
 
 
     generateSettings3D <- function(){
-        start <- input$tStart3d
-        stop <- input$tStop3d
+        start <- input$tStart3d     # start and stop are used to hold the starting and stopping times
+        stop <- input$tStop3d       #   that will be plotted on the 3D plot
 
         if(input$animateBool){
             start <- waits$counter
