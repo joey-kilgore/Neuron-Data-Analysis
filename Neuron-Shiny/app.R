@@ -15,7 +15,7 @@ source("UsefulFunctions.R")
 source("loadDataDynamic.R")
 
 # define data and plot
-dataDir <- "/mnt/c/Users/Joey/Desktop/InternalElectrode/Only Flanking Stim (EXTRA ONSET)/"
+dataDir <- "/mnt/c/Users/Joey/Desktop/TestData/10kBlock/100BT/"
 keepPlot <- ggplot()    # Keeps current saved plot
 initData(dataDir)
 
@@ -219,11 +219,17 @@ ui <- navbarPage("Neuron Data",
                         uiOutput("plotVars3D")
                     )
                 ),
-                numericInput("nodeNum3d", "Node Number:", 51, min=1, max=101, step=1),
-                numericInput("tStart3d", "Start Time:", .005, min=.005, max=100, step=.1),
-                numericInput("tStop3d", "Stop Time:", 100, min=.005, max=100, step=.1),
-                numericInput("avgNum3d", "Moving AVG Width:", 20, min=1, max=100, step=1),
-                checkboxInput("avgBool3d", "Turn on Moving AVG:", FALSE),
+                fluidRow(
+                    column(4,
+                        numericInput("nodeNum3d", "Node Number:", 51, min=1, max=101, step=1)
+                    ),
+                    column(4,
+                        numericInput("tStart3d", "Start Time:", .005, min=.005, max=100, step=.1)
+                    ),
+                    column(4,
+                        numericInput("tStop3d", "Stop Time:", 100, min=.005, max=100, step=.1)
+                    )
+                ),
                 fluidRow(
                     column(6,
                         numericInput("theta","Theta",0,min=-180,max=180,step=5)
@@ -233,15 +239,50 @@ ui <- navbarPage("Neuron Data",
                     )
                 ),
                 fluidRow(
-                    column(12,
-                        sliderInput("xlim", "X Axis", min=-200, max=100, value=c(0,1)),
-                        sliderInput("ylim", "Y Axis", min=-200, max=100, value=c(0,1)),
-                        sliderInput("zlim", "Z Axis", min=-200, max=100, value=c(-150,50))
+                    column(6,
+                        numericInput("xMin", "X Min", 0, min=-200, max=100, step=.1),
+                        numericInput("yMin", "Y Min", 0, min=-200, max=100, step=.1),
+                        numericInput("zMin", "Z Min", -150, min=-200, max=100, step=1)
+                    ),
+                    column(6,
+                        numericInput("xMax", "X Max", 1, min=-200, max=100, step=.1),
+                        numericInput("yMax", "Y Max", 1, min=-200, max=100, step=.1),
+                        numericInput("zMax", "Z Max", 50, min=-200, max=100, step=1)
+                    )
+                ),
+                checkboxInput("avgBool3d", "Turn on Moving AVG:", FALSE),
+                numericInput("avgNum3d", "Moving AVG Width:", 20, min=1, max=100, step=1),
+                checkboxInput("animateBool", "Turn on Animation:", FALSE),
+                fluidRow(
+                    column(6,
+                        numericInput("timeAnimate", "Time Plotted", .5, min=.1, max=2, step = .1)
+                    ),
+                    column(6,
+                        numericInput("incrementsAnimate", "Increments", .1, min=.01, max=1, step=.01)
+                    )
+                ),
+                fluidRow(
+                    column(4,
+                        actionButton("startAnimate", "Start")
+                    ),
+                    column(4,
+                        actionButton("stopAnimate", "Stop")
+                    ),
+                    column(4,
+                        actionButton("resetAnimate", "Reset")
                     )
                 )
             ),
             column(9,
-                plotOutput("plot3d", height=600)
+                plotOutput("plot3d", height=600),
+                fluidRow(
+                    column(6,
+                        verbatimTextOutput("startTimeAnimate")
+                    ),
+                    column(6,
+                        verbatimTextOutput("endTimeAnimate")
+                    )
+                )
             )
         )
     ),
@@ -331,8 +372,50 @@ server <- function(input, output, session) {
     })
 
     # 3D PLOT
+    
+    waits <- reactiveValues()   # reactive to store all reactive variables
+    waits$counter <- 0
+    waits$increment <- 1
+    waits$timer <- reactiveTimer(Inf)
+
+    observeEvent(waits$timer(),{
+        if(input$animateBool){
+            waits$counter <- waits$counter+waits$increment
+            if(waits$counter > input$tStop3d){
+                waits$counter <- input$tStart3d
+            }
+        }
+    })
+    
+    observeEvent(input$startAnimate,{
+        if(input$animateBool == TRUE){
+            waits$counter <- input$tStart3d
+            waits$increment <- input$incrementsAnimate
+            waits$timer <- reactiveTimer(300)
+        }
+    })
+
+    observeEvent(input$stopAnimate,{
+        waits$timer <- reactiveTimer(Inf)
+    })
+
+    observeEvent(input$resetAnimate,{
+        waits$counter <- input$tStart3d
+    })
+
+
     generateSettings3D <- function(){
-        c(input$nodeNum3d,input$tStart3d,input$tStop3d,input$avgBool3d,input$avgNum3d,input$theta,input$phi,input$xlim,input$ylim,input$zlim,input$xvar3d,input$yvar3d,input$zvar3d)
+        start <- input$tStart3d
+        stop <- input$tStop3d
+
+        if(input$animateBool){
+            start <- waits$counter
+            stop <- waits$counter + input$timeAnimate
+        }        
+        output$startTimeAnimate <- renderText(paste("Start Time: ", toString(start), sep="", collapse=NULL))
+        output$endTimeAnimate <- renderText(paste("End Time: ", toString(stop), sep="", collapse=NULL))
+
+        c(input$nodeNum3d,start,stop,input$avgBool3d,input$avgNum3d,input$theta,input$phi,input$xMin,input$xMax,input$yMin,input$yMax,input$zMin,input$zMax,input$xvar3d,input$yvar3d,input$zvar3d)
     }
 
     output$plotVars3D <- renderUI({
@@ -355,7 +438,11 @@ server <- function(input, output, session) {
     })
 
     output$plot3d <- renderPlot({
-        plot3d <- generate3D(generateSettings3D())
+        req(input$xvar3d)   # this ensure that the UI has been rendered prior to trying to plot
+        waits$timer()       # the timer is a trigger for renderPlot
+        
+        settings3D <- generateSettings3D()
+        plot3d <- generate3D(settings3D)
         plot3d
     })
 
