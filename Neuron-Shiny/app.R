@@ -332,6 +332,7 @@ server <- function(input, output, session) {
     # Render new main plot when the generate button is clicked
     output$mainPlot <- renderPlot({
         input$generate
+        req(input$xvar)         # required to ensure the UI has loaded prior to generating the graph
         cat("GENERATING NEW PLOT\n")
         settings <- isolate(generateSettings())
         mainPlot <- isolate(generatePlot(settings))
