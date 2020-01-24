@@ -109,7 +109,7 @@ generateProfile <- function(tProfile, variable, yMin, yMax){
     plot <- ggplot() + geom_path(aes(x=x,y=vData), color="#EE2222", size=.5)+
                 geom_point(aes(x=x,y=vData), color="#EE2222",size=2)+
                 xlab("Node")+ylab(variable)+ylim(yMin,yMax)+
-                ggtitle(sprintf("%s @t=%f",variable, tProfile*200))
+                ggtitle(sprintf("%s @t=%.3f",variable, tProfile))
     plot
 }
 
@@ -196,13 +196,26 @@ ui <- navbarPage("Neuron Data",
         fluidRow(
             # Sidebar panel
             column(2,
-                numericInput("tProfile", "Time", 0, min=.005, max=100, step=.005),
                 uiOutput("varProfile"),
-                column(6,
-                    numericInput("yLowerLim", "Y Min", 0)
+                fluidRow(
+                    column(6,
+                        numericInput("yLowerLim", "Y Min", 0),
+                        numericInput("tProfileStart", "Start", .005, min=.005, max=100, step=.01)
+                    ),
+                    column(6,
+                        numericInput("yUpperLim", "Y Max", 1),
+                        numericInput("tProfileStop", "End", 100, min=.005, max=100, step = .01)
+                    )
                 ),
-                column(6,
-                    numericInput("yUpperLim", "Y Max", 1)
+                numericInput("tProfileIncrement", "Time Increment", .005, min=.005, max=10, step=.005),
+                checkboxInput("profileAnimate", "Turn on Animation", FALSE),
+                fluidRow(
+                    column(6,
+                        actionButton("profileStart", "Start")
+                    ),
+                    column(6,
+                        actionButton("profileStop", "Stop")
+                    )
                 )
             ),
             column(10,
@@ -363,17 +376,47 @@ server <- function(input, output, session) {
     })
 
     # PROFILE
+    waitProfile <- reactiveValues()             # reactive to stare all reactive variables
+    waitProfile$timer <- reactiveTimer(Inf)     # reactiveTimer is used to update the plot
+    waitProfile$counter <- 0                    # keeps track of the current time to be plotted
+    waitProfile$increment <- 1                  # the increment to counter between each plot
+    
+    observeEvent(waitProfile$timer(),{    # this increments the value of the counter when the timer triggers
+        if(input$profileAnimate == TRUE){
+            waitProfile$counter <- waitProfile$counter+waitProfile$increment
+            if(waits$counter > input$tProfileStop){
+                waits$counter <- input$tProfileStart
+            }
+        }
+    })
+
+    observeEvent(input$profileStart,{
+        if(input$profileAnimate == TRUE){
+            waitProfile$counter <- input$tProfileStart
+            waitProfile$increment <- input$tProfileIncrement
+            waitProfile$timer <- reactiveTimer(150)
+        }
+    })
+
+    observeEvent(input$profileStop,{
+        waitProfile$timer <- reactiveTimer(Inf)
+    })
+
     output$varProfile <- renderUI({
         selectInput("variableProfile", "Variable", names)    
     })
 
     output$profilePlot <- renderPlot({
-        profilePlot <- generateProfile(input$tProfile, input$variableProfile, input$yLowerLim, input$yUpperLim)
+        req(input$variableProfile)
+        if(input$profileAnimate == FALSE){
+            profilePlot <- generateProfile(input$tProfileStart, input$variableProfile, input$yLowerLim, input$yUpperLim)
+        } else {
+            profilePlot <- generateProfile(waitProfile$counter, input$variableProfile, input$yLowerLim, input$yUpperLim)
+        }
         profilePlot
     })
 
     # 3D PLOT
-    
     waits <- reactiveValues()   # reactive to store all reactive variables
     waits$counter <- 0
     waits$increment <- 1
