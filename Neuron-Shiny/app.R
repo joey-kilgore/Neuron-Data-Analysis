@@ -392,7 +392,7 @@ server <- function(input, output, session) {
         if(input$animateBool == TRUE){
             waits$counter <- input$tStart3d
             waits$increment <- input$incrementsAnimate
-            waits$timer <- reactiveTimer(300)
+            waits$timer <- reactiveTimer(150)
         }
     })
 
