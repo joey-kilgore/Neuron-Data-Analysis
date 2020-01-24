@@ -394,7 +394,7 @@ server <- function(input, output, session) {
         if(input$profileAnimate == TRUE){
             waitProfile$counter <- input$tProfileStart
             waitProfile$increment <- input$tProfileIncrement
-            waitProfile$timer <- reactiveTimer(150)
+            waitProfile$timer <- reactiveTimer(250)
         }
     })
 
