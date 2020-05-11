@@ -118,7 +118,7 @@ generate3D <- function(settings){
     cat("SETTINGS\n")
     cat(settings)
     cat("\n")
-    nodeNum = as.numeric(settings[1])
+    nodeX = as.numeric(settings[1])
     tStart = as.numeric(settings[2])
     tStop = as.numeric(settings[3])
     avgBool = as.logical(settings[4])
@@ -131,10 +131,13 @@ generate3D <- function(settings){
     xvar = settings[14]
     yvar = settings[15]
     zvar = settings[16]
+    nodeY = as.numeric(settings[17])
+    nodeZ = as.numeric(settings[18])
+
     # generate a 3d plot with x=m, y=h, z=v
-    x <- generateVector(xvar, nodeNum, tStart, tStop, avgBool, avgNum)
-    y <- generateVector(yvar, nodeNum, tStart, tStop, avgBool, avgNum)
-    z <- generateVector(zvar, nodeNum, tStart, tStop, avgBool, avgNum)
+    x <- generateVector(xvar, nodeX, tStart, tStop, avgBool, avgNum)
+    y <- generateVector(yvar, nodeY, tStart, tStop, avgBool, avgNum)
+    z <- generateVector(zvar, nodeZ, tStart, tStop, avgBool, avgNum)
     
     plot <- scatter3D(x,y,z, 
                       xlab=xvar,ylab=yvar,zlab=zvar,
@@ -234,8 +237,16 @@ ui <- navbarPage("Neuron Data",
                 ),
                 fluidRow(
                     column(4,
-                        numericInput("nodeNum3d", "Node Number:", 51, min=1, max=101, step=1)
+                        numericInput("nodeX", "Node Number:", 51, min=1, max=101, step=1)
                     ),
+                    column(4,
+                        numericInput("nodeY", "Node Number:", 51, min=1, max=101, step=1)
+                    ),
+                    column(4,
+                        numericInput("nodeZ", "Node Number:", 51, min=1, max=101, step=1)
+                    )
+                ),
+                fluidRow(
                     column(4,
                         numericInput("tStart3d", "Start Time:", .005, min=.005, max=100, step=.1)
                     ),
@@ -459,7 +470,7 @@ server <- function(input, output, session) {
         output$startTimeAnimate <- renderText(paste("Start Time: ", toString(start), sep="", collapse=NULL))
         output$endTimeAnimate <- renderText(paste("End Time: ", toString(stop), sep="", collapse=NULL))
 
-        c(input$nodeNum3d,start,stop,input$avgBool3d,input$avgNum3d,input$theta,input$phi,input$xMin,input$xMax,input$yMin,input$yMax,input$zMin,input$zMax,input$xvar3d,input$yvar3d,input$zvar3d)
+        c(input$nodeX,start,stop,input$avgBool3d,input$avgNum3d,input$theta,input$phi,input$xMin,input$xMax,input$yMin,input$yMax,input$zMin,input$zMax,input$xvar3d,input$yvar3d,input$zvar3d,input$nodeY,input$nodeZ)
     }
 
     output$plotVars3D <- renderUI({
