@@ -37,6 +37,13 @@ getVarRow <- function(varName, rowNum){
     unlist(dfList[[varName]][rowNum,2:ncol(dfList[[varName]])])
 }
 
+getVarTime <- function(varName, t){
+    # return vector of given var for all nodes at given time step
+    unlist(dfList[[varName]][
+           dfList[[varName]]$Time==t,
+           2:ncol(dfList[[varName]])])
+}
+
 getVarTimeBound <- function(varName, nodeNum, tStart, tStop){
     # return vector of given var and node over range of time
     unlist(dfList[[varName]][

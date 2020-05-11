@@ -104,7 +104,7 @@ generateName <- function(settings){
 # PROFILE PLOT FUNCTIONS
 generateProfile <- function(tProfile, variable, yMin, yMax){
     # Generate the profile plot (V vs node) at a given time
-    vData <- getVarRow(variable, tProfile*200+1)
+    vData <- getVarTime(variable, tProfile)
     x <- 1:length(vData)
     plot <- ggplot() + geom_path(aes(x=x,y=vData), color="#EE2222", size=.5)+
                 geom_point(aes(x=x,y=vData), color="#EE2222",size=2)+
