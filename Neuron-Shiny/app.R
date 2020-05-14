@@ -15,7 +15,7 @@ source("UsefulFunctions.R")
 source("loadDataDynamic.R")
 
 # define data and plot
-dataDir <- "/mnt/c/Users/Joey/Desktop/TestData/10kBlock/100BT/"
+dataDir <- "./data/"
 keepPlot <- ggplot()    # Keeps current saved plot
 initData(dataDir)
 
@@ -313,7 +313,7 @@ ui <- navbarPage("Neuron Data",
     tabPanel("Data Set",
         fluidRow(
             column(10,
-                textInput("dataFolder", "Data Folder:", value="/mnt/c/Users/Joey/Desktop/InternalElectrode/Only Flanking Stim (EXTRA ONSET)/", width="100%")
+                textInput("dataFolder", "Data Folder:", value=dataDir, width="100%")
             ),
             column(2,
                 actionButton("updateData", "Update Dataset")
