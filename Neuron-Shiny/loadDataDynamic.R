@@ -32,6 +32,12 @@ getVarCol <- function(varName, nodeNum){
     unlist(dfList[[varName]][1:nrow(dfList[[varName]]),nodeNum+1])
 }
 
+getNumCol <- function(varName){
+    # return the number of columns in the dataframe
+    # (-1 for the time column)
+    ncol(dfList[[varName]])-1
+}
+
 getVarRow <- function(varName, rowNum){
     # return vector of given var for all nodes at given row number
     unlist(dfList[[varName]][rowNum,2:ncol(dfList[[varName]])])

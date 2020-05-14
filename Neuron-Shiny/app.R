@@ -20,23 +20,23 @@ keepPlot <- ggplot()    # Keeps current saved plot
 initData(dataDir)
 
 # MAIN PAGE FUNCTIONS (2D Plot)
-generateVector <- function(vectorVar, nodeNumString, tStartString, tStopString, avgBool, avgNumString, respectTo){
+generateVector <- function(vectorVar, compNumString, tStartString, tStopString, avgBool, avgNumString, respectTo){
     # generate the vector from DATA given the input parameters
-    nodeNum = as.numeric(nodeNumString)
+    compNum = as.numeric(compNumString)
     tStart = as.numeric(tStartString)
     tStop = as.numeric(tStopString)
     avgNum = as.numeric(avgNumString)
     if(vectorVar == "Time"){
         vec <- getTimeStep(tStart, tStop)
     }else{
-        vec <- getVarTimeBound(vectorVar, nodeNum, tStart, tStop)
+        vec <- getVarTimeBound(vectorVar, compNum, tStart, tStop)
     }
     
     if(!missing(respectTo)){
         if(respectTo == "Time"){
             vecRespect = getTimeStep(tStart,tStop)
         }else{
-            vecRespect = getVarTimeBound(vectorVar, nodeNum, tStart, tStop)
+            vecRespect = getVarTimeBound(vectorVar, compNum, tStart, tStop)
         }
         vec <- calcDiff(vecRespect, vec)
     }
@@ -96,7 +96,7 @@ generatePlot <- function(settings){
 
 generateName <- function(settings){
     # Generate file name for a given plot settings
-    # Using the form "<variable>_<nodeNum>.png"
+    # Using the form "<variable>_<compNum>.png"
     newName <- sprintf("%s_vs_%s_Node%s.png",settings[2],settings[1],settings[3])
     newName
 }
@@ -118,7 +118,7 @@ generate3D <- function(settings){
     cat("SETTINGS\n")
     cat(settings)
     cat("\n")
-    nodeX = as.numeric(settings[1])
+    compX = as.numeric(settings[1])
     tStart = as.numeric(settings[2])
     tStop = as.numeric(settings[3])
     avgBool = as.logical(settings[4])
@@ -131,13 +131,13 @@ generate3D <- function(settings){
     xvar = settings[14]
     yvar = settings[15]
     zvar = settings[16]
-    nodeY = as.numeric(settings[17])
-    nodeZ = as.numeric(settings[18])
+    compY = as.numeric(settings[17])
+    compZ = as.numeric(settings[18])
 
     # generate a 3d plot with x=m, y=h, z=v
-    x <- generateVector(xvar, nodeX, tStart, tStop, avgBool, avgNum)
-    y <- generateVector(yvar, nodeY, tStart, tStop, avgBool, avgNum)
-    z <- generateVector(zvar, nodeZ, tStart, tStop, avgBool, avgNum)
+    x <- generateVector(xvar, compX, tStart, tStop, avgBool, avgNum)
+    y <- generateVector(yvar, compY, tStart, tStop, avgBool, avgNum)
+    z <- generateVector(zvar, compZ, tStart, tStop, avgBool, avgNum)
     
     plot <- scatter3D(x,y,z, 
                       xlab=xvar,ylab=yvar,zlab=zvar,
@@ -154,7 +154,7 @@ ui <- navbarPage("Neuron Data",
                 uiOutput("plotVars"),
                 fluidRow(
                     column(6,
-                        numericInput("nodeNum", "Node Number:", 51, min=1, max=101, step=1)
+                        numericInput("compNum", "Compartment Number:", 51, min=1, max=101, step=1)
                     ),
                     column(6,
                         numericInput("avgNum", "Moving AVG Width:", 20, min=1, max=100, step=1)
@@ -237,13 +237,13 @@ ui <- navbarPage("Neuron Data",
                 ),
                 fluidRow(
                     column(4,
-                        numericInput("nodeX", "Node Number:", 51, min=1, max=101, step=1)
+                        numericInput("compX", "Compartment Number:", 51, min=1, max=101, step=1)
                     ),
                     column(4,
-                        numericInput("nodeY", "Node Number:", 51, min=1, max=101, step=1)
+                        numericInput("compY", "Compartment Number:", 51, min=1, max=101, step=1)
                     ),
                     column(4,
-                        numericInput("nodeZ", "Node Number:", 51, min=1, max=101, step=1)
+                        numericInput("compZ", "Compartment Number:", 51, min=1, max=101, step=1)
                     )
                 ),
                 fluidRow(
@@ -329,7 +329,7 @@ ui <- navbarPage("Neuron Data",
 server <- function(input, output, session) {
     # MAIN PAGE (2D Plot)
     generateSettings <- function(){
-        c(input$xvar,input$yvar,input$nodeNum,input$tStart,input$tStop,input$color,input$avgNum,input$avgBool,input$deriv,input$normal)
+        c(input$xvar,input$yvar,input$compNum,input$tStart,input$tStop,input$color,input$avgNum,input$avgBool,input$deriv,input$normal)
     }
     
     output$plotVars <- renderUI({
@@ -337,7 +337,7 @@ server <- function(input, output, session) {
             fluidRow(
                 column(6, style='padding-left:25px;',
                     selectInput("yvar", "Y Variable:",
-                        c("Time", names))
+                        c(names))
                 ),
                 column(6,
                     selectInput("deriv", "Respect To:",
@@ -351,6 +351,10 @@ server <- function(input, output, session) {
                 )
             )
         )
+    })
+
+    observeEvent(input$yvar,{
+        updateNumericInput(session, "compNum", value=1, min=1, max=getNumCol(input$yvar))
     })
 
     # Render new main plot when the generate button is clicked
@@ -470,7 +474,7 @@ server <- function(input, output, session) {
         output$startTimeAnimate <- renderText(paste("Start Time: ", toString(start), sep="", collapse=NULL))
         output$endTimeAnimate <- renderText(paste("End Time: ", toString(stop), sep="", collapse=NULL))
 
-        c(input$nodeX,start,stop,input$avgBool3d,input$avgNum3d,input$theta,input$phi,input$xMin,input$xMax,input$yMin,input$yMax,input$zMin,input$zMax,input$xvar3d,input$yvar3d,input$zvar3d,input$nodeY,input$nodeZ)
+        c(input$compX,start,stop,input$avgBool3d,input$avgNum3d,input$theta,input$phi,input$xMin,input$xMax,input$yMin,input$yMax,input$zMin,input$zMax,input$xvar3d,input$yvar3d,input$zvar3d,input$compY,input$compZ)
     }
 
     output$plotVars3D <- renderUI({
@@ -490,6 +494,18 @@ server <- function(input, output, session) {
                 )
             )
         )
+    })
+
+    observeEvent(input$xvar3d, {
+        updateNumericInput(session, "compX", value=1, min=1, max=getNumCol(input$xvar3d))
+    })
+
+    observeEvent(input$yvar3d, {
+        updateNumericInput(session, "compY", value=1, min=1, max=getNumCol(input$yvar3d))
+    })
+
+    observeEvent(input$zvar3d, {
+        updateNumericInput(session, "compZ", value=1, min=1, max=getNumCol(input$zvar3d))
     })
 
     output$plot3d <- renderPlot({
