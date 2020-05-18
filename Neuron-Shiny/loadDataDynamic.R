@@ -46,7 +46,7 @@ getVarRow <- function(varName, rowNum){
 getVarTime <- function(varName, t){
     # return vector of given var for all nodes at given time step
     unlist(dfList[[varName]][
-           dfList[[varName]]$Time==t,
+           dfList[[varName]]$Time>=t & dfList[[varName]]$Time<t+getTimeStepVal(varName),
            2:ncol(dfList[[varName]])])
 }
 
@@ -73,4 +73,15 @@ getTimeStep <- function(tStart, tStop){
     unlist(dfList[[names[1]]][
         dfList[[names[1]]]$Time>tStart & dfList[[names[1]]]$Time<tStop,
         1])
+}
+
+getTimeStepVal <- function(varName){
+    # return the value of the value of the first time step
+    # which is also the time value between each time step
+    dfList[[varName]][1,1]
+}
+
+getEndTimeVal <- function(varName){
+    # return the last time step value for the varaible
+    dfList[[varName]][nrow(dfList[[varName]]),1]
 }

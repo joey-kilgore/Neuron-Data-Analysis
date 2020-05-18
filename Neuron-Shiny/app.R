@@ -354,7 +354,11 @@ server <- function(input, output, session) {
     })
 
     observeEvent(input$yvar,{
+        tStep = getTimeStepVal(input$yvar)
+        tEnd = getEndTimeVal(input$yvar)
         updateNumericInput(session, "compNum", value=1, min=1, max=getNumCol(input$yvar))
+        updateNumericInput(session, "tStart", value=tStep, min=tStep, max=tEnd, step=tStep)
+        updateNumericInput(session, "tStop", value=tEnd, min=tStep, max=tEnd, step=tStep)
     })
 
     # Render new main plot when the generate button is clicked
@@ -398,7 +402,8 @@ server <- function(input, output, session) {
     
     observeEvent(waitProfile$timer(),{    # this increments the value of the counter when the timer triggers
         if(input$profileAnimate == TRUE){
-            waitProfile$counter <- waitProfile$counter+waitProfile$increment
+            waitProfile$counter <- waitProfile$counter+input$tProfileIncrement
+            cat(waitProfile$counter)
             if(waits$counter > input$tProfileStop){
                 waits$counter <- input$tProfileStart
             }
@@ -421,9 +426,17 @@ server <- function(input, output, session) {
         selectInput("variableProfile", "Variable", names)    
     })
 
+    observeEvent(input$variableProfile,{
+        tStart = getTimeStepVal(input$variableProfile)
+        tEnd = getEndTimeVal(input$variableProfile)
+        updateNumericInput(session, "tProfileStart", value=tStart, min=tStart, max=tEnd, step=tStart) 
+        updateNumericInput(session, "tProfileStop", value=tEnd, min=tStart, max=tEnd, step=tStart)
+        updateNumericInput(session, "tProfileIncrement", value=tStart, min=tStart, max=tEnd, step=tStart)
+    })
+
     output$profilePlot <- renderPlot({
         req(input$variableProfile)
-        if(input$profileAnimate == FALSE){
+        if(input$profileAnimate == FALSE & waitProfile$counter != 0){
             profilePlot <- generateProfile(input$tProfileStart, input$variableProfile, input$yLowerLim, input$yUpperLim)
         } else {
             profilePlot <- generateProfile(waitProfile$counter, input$variableProfile, input$yLowerLim, input$yUpperLim)
@@ -498,6 +511,10 @@ server <- function(input, output, session) {
 
     observeEvent(input$xvar3d, {
         updateNumericInput(session, "compX", value=1, min=1, max=getNumCol(input$xvar3d))
+        tStep = getTimeStepVal(input$xvar3d)
+        tEnd = getEndTimeVal(input$xvar3d)
+        updateNumericInput(session, "tStart3d", value=tStep, min=tStep, max=tEnd, step=tStep)
+        updateNumericInput(session, "tStop3d", value=tEnd, min=tStep, max=tEnd, step=tStep)
     })
 
     observeEvent(input$yvar3d, {
