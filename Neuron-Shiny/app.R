@@ -17,6 +17,7 @@ source("loadDataDynamic.R")
 # define data and plot
 dataDir <- "./data/"
 keepPlot <- ggplot()    # Keeps current saved plot
+dataCount <- 0
 initData(dataDir)
 
 # MAIN PAGE FUNCTIONS (2D Plot)
@@ -403,9 +404,8 @@ server <- function(input, output, session) {
     observeEvent(waitProfile$timer(),{    # this increments the value of the counter when the timer triggers
         if(input$profileAnimate == TRUE){
             waitProfile$counter <- waitProfile$counter+input$tProfileIncrement
-            cat(waitProfile$counter)
-            if(waits$counter > input$tProfileStop){
-                waits$counter <- input$tProfileStart
+            if(waitProfile$counter > input$tProfileStop){
+                waitProfile$counter <- input$tProfileStart
             }
         }
     })
@@ -435,8 +435,7 @@ server <- function(input, output, session) {
     })
 
     output$profilePlot <- renderPlot({
-        req(input$variableProfile)
-        if(input$profileAnimate == FALSE & waitProfile$counter != 0){
+        if(input$profileAnimate == FALSE){
             profilePlot <- generateProfile(input$tProfileStart, input$variableProfile, input$yLowerLim, input$yUpperLim)
         } else {
             profilePlot <- generateProfile(waitProfile$counter, input$variableProfile, input$yLowerLim, input$yUpperLim)
@@ -547,6 +546,7 @@ server <- function(input, output, session) {
         })
         
         tryCatch({
+
             initData(input$dataFolder)
         },
         error=function(cond){

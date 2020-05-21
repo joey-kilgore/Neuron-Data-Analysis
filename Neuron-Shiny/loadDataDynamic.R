@@ -46,7 +46,7 @@ getVarRow <- function(varName, rowNum){
 getVarTime <- function(varName, t){
     # return vector of given var for all nodes at given time step
     unlist(dfList[[varName]][
-           dfList[[varName]]$Time>=t & dfList[[varName]]$Time<t+getTimeStepVal(varName),
+           dfList[[varName]]$Time>=t & dfList[[varName]]$Time<(t+getTimeStepVal(varName)),
            2:ncol(dfList[[varName]])])
 }
 
