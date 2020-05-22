@@ -2,19 +2,27 @@
 R Shiny app for analyzing data from NEURON simulations with complex models.  
 For help with setup see the [WIKI](https://github.com/joey-kilgore/Neuron-Data-Analysis/wiki)
 
-### Running the application  
+## Running the application  
 Make sure you change the initial data folders in app.R to folders on your machine prior to running the application. Then enter the following:  
 ```  
+git clone https://github.com/joey-kilgore/Neuron-Data-Analysis.git
 cd Neuron-Shiny  
 R -e "shiny::runApp('app.R')"  
 ```
 This will load up the data and give you a port number on your machine to access the application. More info on 'runApp' can be found [HERE](https://shiny.rstudio.com/reference/shiny/latest/runApp.html).
 
-### How to use  
-When app.r is run, the 2D Plot tab has many options. It will load up various parameter from the dataset, and then combine them in a dataframe. This is done with code that already existed in the [Nerve-Block-Modeling/R Code](https://github.com/joey-kilgore/Nerve-Block-Modeling/tree/master/R%20Code). From here you can then select variables and colors to begin plotting.  
-Use the generate button to update the plot window when you have selected the parameters you wish to plot.  
-Use the keep button if you want to take the current parameters you have set and save them for layering another plot on top. This is similar to the [hold on](https://www.mathworks.com/help/matlab/ref/hold.html) functionality in MATLAB.  
-Use the clear button when you want to remove all previous layers of the plot. This does not update the plot window, but the next time you generate a plot it will be generated from a blank state.  
-The V Profile tab gives you the ability to plot all voltages across an axon at any given time.  
-The 3D plot looks at the M gate, H gate, and voltage to observe the changes overtime. This can be extremely useful for looking at the steady-state of nodes during kilohertz frequency stimulation.  
-The Data Set tab allows for the user to specify a different location to load data. If there is a 'Setup.txt' file in that folder, it will be shown on the screen.
+## How to use  
+This R shiny application is setup to have multiple different tabs to allow for different visualizations to be created easily. The initial data is loaded from the ./Neuron-Shiny/data directory, but can be changed using the data set tab.
+
+### 2D Plots
+![2d Plot screenshot](https://github.com/joey-kilgore/Neuron-Data-Analysis/blob/master/docs/screenshots/2dplot.png)
+These allow for viewing variables plotted against eachother for deeper analysis. The initial data set includes multiple different variables, usually plotted over time. These plots can then be stacked on top of eachother for quickly comparing different compartments.  
+The UI includes the ability to pick which variable is being plotted and over what time period. Plots can then be layered using the 'Keep Plot' button, and erased using the 'Clear Plot'. Additionally plots can be saved to file using the 'Save Plot' feature.  
+
+### Profile Plots
+![Profile Plot Screenshot](https://github.com/joey-kilgore/Neuron-Data-Analysis/blob/master/docs/screenshots/profileplot.png)  
+This tab allows for viewing all compartments of a specific variable plotted together at a single time step. The animations of the plot can then allow for viewing all compartments through time.  
+
+### 3D Plots  
+![3d Plot screenshot](https://github.com/joey-kilgore/Neuron-Data-Analysis/blob/master/docs/screenshots/3dplot.png)  
+This tab allows for viewing 3 different variables and compartments against each other through time. The color of the plot mirrors the values of the z axis. Rotations of the plot can be done using the theta and phi values. Additionally the plots can be animated using the UI on the bottom left, and during animations can be manipulated for better viewing angles.
