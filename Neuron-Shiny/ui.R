@@ -16,31 +16,15 @@ ui <- navbarPage("Neuron Data",
         checkboxInput("normal", "Normalize Y Axis", FALSE),
         textInput("color", "Color:", value = "#111111"),
         br(),
-               
-               # Time start and stop selection, divs were used for styling to force the two on the same line
-               div(
-                 style = "display: inline-block;vertical-align:center; width: 45%;",
-                 numericInput(
-                   "tStart",
-                   "Start Time:",
-                   0,
-                   min = 0,
-                   max = 100,
-                   step = .01
-                 )
-               ),
-               div(
-                 style = "display: inline-block;vertical-align:center; width: 45%;",
-                 numericInput(
-                   "tStop",
-                   "Stop Time:",
-                   100,
-                   min = 0,
-                   max = 100,
-                   step = .01
-                 )
-               ),
-               br(),
+        fluidRow(
+          column(6,
+            numericInput("tStart","Start Time:",0,min = 0,max = 100,step = .01)
+          ),
+          column(6,
+            numericInput("tStop","Stop Time:",100,min = 0,max = 100,step = .01)
+          )
+        ),
+        br(),
         # Bottom 4 buttons of 2d plot UI
         fluidRow(
           column(6,
