@@ -6,7 +6,7 @@ source("UsefulFunctions.R")
 source("loadDataDynamic.R")
 
 # define data and plot
-dataDir <- "./data/"
+dataDir <- "./Data/"
 keepPlot <- ggplot()    # Keeps current saved plot
 dataCount <- 0
 initData(dataDir)
